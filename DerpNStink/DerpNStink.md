@@ -544,7 +544,7 @@ Naszym targetem będzie użytkownik _unclestinky_. Zanim przystąpimy do dalszyc
 Possible Hashs:
 [+] MySQL 160bit - SHA-1(SHA-1($pass))
 ```
-Teraz czas na password cracking z użyciem **John The Ripper**
+Dalej czeka nas password cracking przy wykorzystaniu toola **John The Ripper**
 
 Pozostaje nam zapisać dane do pliku _mysql_hashes.txt_ i doprowadzić tekst do formatu `user:hash` (można manualnie lub za pomocą kombinacji komend)
 
