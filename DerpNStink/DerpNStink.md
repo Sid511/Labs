@@ -245,6 +245,10 @@ Pozostaje nam wykorzystać tę informację i spróbować się zalogować
 Zobaczmy czy zadziała z tym hasłem
 `login:admin password:admin`
 
+Próba zakończona powodzeniem. W rezultacie trafiamy do panelu wordpressa jako użytkownik z ograniczonymi uprawnieniami.
+![](https://github.com/d15rup7or/Labs/blob/master/DerpNStink/img/slideshow.png)
+
+
 
 
 ## 2. 
