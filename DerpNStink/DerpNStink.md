@@ -82,6 +82,9 @@ Jak widać to zwykły landing page, czyli nic szczególnego. A co jeśli zajrzym
 Brawo! Mamy naszą pierwszą flagę :)
 `<--flag1(52E37291AEDF6A46D7D0BB8A6312F4F9F1AA4975C248C3F0E008CBA09D6E9166) -->`
 
+> Alternatywnym sposobem na zdobycie pierwszej flagi jest skorzystanie z biblioteki cURL \
+`curl http://192.168.56.101/`
+
 ---
 
 ### Web Notes 
@@ -200,6 +203,47 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
 2020/02/25 17:21:05 Finished                                                                                                                              
 =============================================================== 
 ```
+
+Wygląda na to, że katalog ***/weblog*** to główny katalog Wordpressa
+
+WPScan pozwoli nam sprawdzić czy na stronie są wykorzystywane jakieś podatne pluginy <br>
+`wpscan --url http://derpnstink.local/weblog/ -e u ap`
+
+```
+[+] slideshow-gallery
+ | Location: http://derpnstink.local/weblog/wp-content/plugins/slideshow-gallery/
+ | Last Updated: 2019-07-12T13:09:00.000Z
+ | [!] The version is out of date, the latest version is 1.6.12
+ |
+ | Found By: Urls In Homepage (Passive Detection)
+ |
+ | Version: 1.4.6 (100% confidence)
+ | Found By: Readme - Stable Tag (Aggressive Detection)
+ |  - http://derpnstink.local/weblog/wp-content/plugins/slideshow-gallery/readme.txt
+ | Confirmed By: Readme - ChangeLog Section (Aggressive Detection)
+ |  - http://derpnstink.local/weblog/wp-content/plugins/slideshow-gallery/readme.txt
+```
+Tym razem wtyczka *Slideshow Gallery* nie została zaktualizowana (1.4.6). Ta wersja okazuje się być podatna na **Arbitrary File Upload**
+
+Dodatkowo wpscan odsłonił przed nami dwóch użytkowników
+```
+[i] User(s) Identified:
+
+[+] unclestinky
+ | Found By: Author Id Brute Forcing - Author Pattern (Aggressive Detection)
+ | Confirmed By: Login Error Messages (Aggressive Detection)
+
+[+] admin
+ | Found By: Author Id Brute Forcing - Author Pattern (Aggressive Detection)
+ | Confirmed By: Login Error Messages (Aggressive Detection)
+
+```
+
+Pozostaje nam wykorzystać tę informację i spróbować się zalogować
+![](https://github.com/d15rup7or/Labs/blob/master/DerpNStink/img/wp-login-page.png)
+
+Zobaczmy czy zadziała z tym hasłem
+`login:admin password:admin`
 
 
 
