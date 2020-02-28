@@ -520,7 +520,7 @@ show tables;
 24 rows in set (0.00 sec)
 ```
 Wyświetlmy listę kolumn i zobaczmy dostępnych Użytkowników i Hasła:
-`show columns from user;`->`select User,Password from user;
+`show columns from user;` -> `select User,Password from user;`
 
 ```
 mysql> select User,Password from user;
