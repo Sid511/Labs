@@ -546,10 +546,11 @@ Possible Hashs:
 ```
 Dalej czeka nas password cracking przy wykorzystaniu toola **John The Ripper**
 
-Pozostaje nam zapisać dane do pliku _mysql_hashes.txt_ i doprowadzić tekst do formatu `user:hash` (można manualnie lub za pomocą kombinacji komend)
+Zapisujemy dane do pliku _mysql_hashes.txt_ i doprowadzamy tekst do formatu `user:hash` (możemy zrobić to manualnie lub za pomocą kombinacji komend)
 
 
-`john mysql_hash.txt --format=mysql-sha1 --wordlist=/usr/share/wordlists/rockyou.txt` \
+Wpisujemy komendę:
+`john mysql_hash.txt --format=mysql-sha1 --wordlist=/usr/share/wordlists/rockyou.txt` /
 Otwórzmy plik:
 
 `john --show mysql_hash.txt`
