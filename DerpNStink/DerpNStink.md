@@ -562,5 +562,9 @@ unclestinky:wedgie57
 1 password hash cracked, 0 left
 ```
 
+Wykorzystajmy te dane aby zalogować się do wordpressa. Tam w zakładce **Posts** czeka na nas druga flaga:
+`flag2(a7d355b26bda6bf1196ccffead0b2cf2b81f0a9de5b4876b44407f1dc07e51e6)`
+
+Trzecią flagę znajdziemy w katalogu Desktop użytkownika unclestinky
 `flag3(07f62b021771d3cf67e2e1faf18769cc5e5c119ad7d4d1847a11e11d6d5a7ecb)`
 
